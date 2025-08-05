@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  api1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api1
+    environment:
+      - SPRING_APPLICATION_NAME=rinha2025-api1
+      - PAYMENT_SERVER_DEFAULT_URL=http://payment-processor-default:8001/process-payment
+      - PAYMENT_SERVER_FALLBACK_URL=http://payment-processor-fallback:8002/process-payment
+      - PAYMENT_SERVER_RETRY_MAX_ATTEMPTS=2
+      - PAYMENT_SERVER_RETRY_DELAY_MS=500
+    networks:
+      - app-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api2
+    environment:
+      - SPRING_APPLICATION_NAME=rinha2025-api2
+      - PAYMENT_SERVER_DEFAULT_URL=http://payment-processor-default:8001/process-payment
+      - PAYMENT_SERVER_FALLBACK_URL=http://payment-processor-fallback:8002/process-payment
+      - PAYMENT_SERVER_RETRY_MAX_ATTEMPTS=2
+      - PAYMENT_SERVER_RETRY_DELAY_MS=500
+    networks:
+      - app-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "9999:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    networks:
+      - app-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+networks:
+  app-network:
+    driver: bridge
+  payment-processor:
+    external: true
